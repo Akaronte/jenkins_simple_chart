@@ -1,0 +1,18 @@
+{{- if .Values.persistence.enabled -}}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ template "jenkins.fullname" . }}-jenkins
+  labels:
+    app: {{ template "jenkins.name" . }}
+    chart: {{ template "jenkins.chart" . }}
+    release: {{ .Release.Name | quote }}
+    heritage: {{ .Release.Service | quote }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.jenkins.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.jenkins.size | quote }}
+  {{ include "jenkins.storageClass" . }}
+{{- end -}}

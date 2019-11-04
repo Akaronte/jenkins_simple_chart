@@ -1,0 +1,28 @@
+1. Get your '{{ .Values.adminUser }}' user password default is admin
+
+2. Get the Jenkins URL to visit by running these commands in the same shell:
+{{- if contains "NodePort" .Values.service.type}}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ template "jenkins.fullname" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT/login
+
+{{- else if contains "LoadBalancer" .Values.service.type}}
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+        You can watch the status of by running 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ template "jenkins.fullname" . }}'
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "jenkins.fullname" . }} --template "{{ "{{ range (index .status.loadBalancer.ingress 0) }}{{ . }}{{ end }}" }}")
+  echo http://$SERVICE_IP:{{ .Values.service.servicePort }}/login
+
+{{- else if contains "ClusterIP"  .Values.service.type}}
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/component={{ .Values.master.componentName }}" -l "app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+  echo http://127.0.0.1:{{ .Values.service.servicePort }}
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME {{ .Values.service.servicePort }}:{{ .Values.service.servicePort }}
+{{- end }}
+
+{{- if .Values.persistence.enabled }}
+{{- else }}
+#################################################################################
+######   WARNING: Persistence is disabled!!! You will lose your data when   #####
+######            the Jenkins pod is terminated.                            #####
+#################################################################################
+{{- end }}
+
